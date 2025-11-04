@@ -1,4 +1,4 @@
-Miguel Borges da silva N°21; Kauã albuquerque almeida N°16
+Miguel Borges da silva N°21; Kauã de albuquerque almeida N°16
 
 para esse app funcionar precione -ctrl e "- para abrir o terminal escreva
 
