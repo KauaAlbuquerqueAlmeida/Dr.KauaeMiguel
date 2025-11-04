@@ -1,7 +1,7 @@
 {
   "name": "dr.kauaemiguel",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -9,10 +9,11 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "~54.0.22",
-    "expo-status-bar": "~3.0.8",
-    "react": "19.1.0",
-    "react-native": "0.81.5"
-  },
-  "private": true
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/native": "^6.1.6",
+    "@react-navigation/native-stack": "^6.9.12",
+    "expo": "~48.0.0",
+    "react": "18.2.0",
+    "react-native": "0.71.8"
+  }
 }
