@@ -1,99 +1,83 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import { supabase } from '../supabase';
 
 export default function CreateClass({ navigation }) {
-  const [className, setClassName] = useState('');
-  const [teacherName, setTeacherName] = useState('');
-  const [description, setDescription] = useState('');
+  const [nome, setNome] = useState('');
+  const [numero, setNumero] = useState('');
+  const [professor, setProfessor] = useState(null);
 
-  const handleSaveClass = async () => {
-    if (!className.trim() || !teacherName.trim()) {
-      Alert.alert('Erro', 'Por favor, preencha o nome da turma e do professor.');
+  useEffect(() => {
+    async function loadUser() {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Erro ao obter usuário:', error.message);
+      } else {
+        setProfessor(data.user);
+      }
+    }
+    loadUser();
+  }, []);
+
+  async function handleCreate() {
+    if (!nome.trim() || !numero.trim()) {
+      Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
 
-    try {
-      const newClass = {
-        id: Date.now().toString(),
-        name: className.trim(),
-        teacher: teacherName.trim(),
-        description: description.trim(),
-        createdAt: new Date().toISOString(),
-      };
-
-      // Obtém turmas salvas
-      const existingClasses = await AsyncStorage.getItem('classes');
-      const classes = existingClasses ? JSON.parse(existingClasses) : [];
-
-      // Adiciona nova turma
-      classes.push(newClass);
-      await AsyncStorage.setItem('classes', JSON.stringify(classes));
-
-      Alert.alert('Sucesso', 'Turma criada com sucesso!');
-      navigation.goBack(); // retorna à tela anterior (geralmente lista de turmas)
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível salvar a turma.');
+    if (!professor) {
+      Alert.alert('Erro', 'Usuário não autenticado');
+      return;
     }
-  };
+
+    const { error } = await supabase.from('turmas').insert([
+      {
+        nome,
+        numero: parseInt(numero),
+        id_professor: id_professor, // 🔹 RELAÇÃO COM O PROFESSOR LOGADO
+      },
+    ]);
+
+    if (error) {
+      console.error('Erro ao criar turma:', error.message);
+      Alert.alert('Erro', 'Não foi possível criar a turma.');
+    } else {
+      Alert.alert('Sucesso', 'Turma criada com sucesso!');
+      navigation.goBack();
+    }
+  }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Criar Nova Turma</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Cadastrar Nova Turma</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Nome da turma"
-          value={className}
-          onChangeText={setClassName}
-        />
+      <TextInput
+        placeholder="Número da Turma"
+        keyboardType="numeric"
+        value={numero}
+        onChangeText={setNumero}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Nome da Turma"
+        value={nome}
+        onChangeText={setNome}
+        style={styles.input}
+      />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Nome do professor"
-          value={teacherName}
-          onChangeText={setTeacherName}
-        />
-
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Descrição (opcional)"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
-
-        <Button title="Salvar Turma" onPress={handleSaveClass} />
-      </View>
-    </TouchableWithoutFeedback>
+      <Button title="Salvar Turma" onPress={handleCreate} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-    padding: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
   input: {
-    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
   },
 });

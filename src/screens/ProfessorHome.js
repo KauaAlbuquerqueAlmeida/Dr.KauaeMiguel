@@ -1,94 +1,154 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, FlatList, Alert, StyleSheet } from 'react-native';
-import { logout, getCurrentUser, listClassesByProfessor, deleteClass, classHasActivities } from '../storage';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { supabase } from '../supabase';
 
 export default function ProfessorHome({ navigation }) {
+  const [turmas, setTurmas] = useState([]);
   const [professor, setProfessor] = useState(null);
-  const [classes, setClasses] = useState([]);
 
-  // 🔹 Carrega os dados do professor e as turmas
+  // 🔹 Carrega o usuário logado e as turmas dele
   useEffect(() => {
-    async function loadData() {
-      const user = await getCurrentUser();
-      setProfessor(user);
-      if (user) {
-        const list = await listClassesByProfessor(user.id);
-        setClasses(list);
+    async function carregarDados() {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error) {
+        console.log('❌ Erro ao obter usuário:', error.message);
+        return;
+      }
+
+      if (data?.user) {
+        setProfessor(data.user);
+        buscarTurmas(data.user.id);
+      } else {
+        console.log('⚠️ Nenhum usuário logado');
       }
     }
-    loadData();
+
+    carregarDados();
   }, []);
 
-  async function handleLogout() {
-    await logout();
+  // 🔹 Busca turmas do professor logado
+  const buscarTurmas = async (professorId) => {
+   const { data, error } = await supabase
+  .from('turmas')
+  .select('id, nome, numero')
+  .eq('professor_id', user.id);
+
+    if (error) {
+      console.log('❌ Erro ao buscar turmas:', error.message);
+    } else {
+      console.log('📘 Turmas carregadas:', data);
+      setTurmas(data || []);
+    }
+  };
+
+  // 🔹 Excluir turma
+  const excluirTurma = async (id) => {
+    Alert.alert(
+      'Confirmar exclusão',
+      'Deseja realmente excluir esta turma?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            const { error } = await supabase.from('turmas').delete().eq('id', id);
+            if (error) {
+              console.log('Erro ao excluir turma:', error.message);
+            } else {
+              buscarTurmas(professor.id);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // 🔹 Logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigation.replace('Login');
-  }
-
-  async function load() {
-    if (professor) {
-      const list = await listClassesByProfessor(professor.id);
-      setClasses(list);
-    }
-  }
-
-  async function handleDelete(classId) {
-    const has = await classHasActivities(classId);
-    if (has) {
-      Alert.alert('Aviso', 'Você não pode excluir uma turma com atividades cadastradas');
-      return;
-    }
-
-    Alert.alert('Confirmar', 'Deseja realmente excluir esta turma?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: async () => { await deleteClass(classId); load(); } }
-    ]);
-  }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Olá, {professor ? professor.name : 'Professor'}</Text>
-      <Button title="Sair" onPress={handleLogout} />
+    <ScrollView style={styles.container}>
+      <Text style={styles.titulo}>Olá, {professor?.email || 'Professor'}</Text>
 
-      <View style={{ height: 12 }} />
-      <Button title="Cadastrar Turma" onPress={() => navigation.navigate('CreateClass')} />
+      <TouchableOpacity style={styles.botao} onPress={() => navigation.navigate('CreateClass')}>
+        <Text style={styles.textoBotao}>CADASTRAR TURMA</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.section}>Suas turmas</Text>
-      <FlatList
-        data={classes}
-        keyExtractor={item => item.id}
-        ListEmptyComponent={<Text>Nenhuma turma cadastrada</Text>}
-        renderItem={({ item, index }) => (
-          <View style={styles.classRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: '700' }}>{index + 1} - {item.name}</Text>
+      <TouchableOpacity style={[styles.botao, { backgroundColor: 'gray' }]} onPress={handleLogout}>
+        <Text style={styles.textoBotao}>SAIR</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.titulo}>Suas turmas</Text>
+
+      {turmas.length === 0 ? (
+        <Text style={{ textAlign: 'center', marginTop: 20 }}>Nenhuma turma cadastrada</Text>
+      ) : (
+        turmas.map((turma) => (
+          <View key={turma.id} style={styles.item}>
+            <Text style={styles.textoTurma}>
+              {turma.numero ? `${turma.numero} - ` : ''}{turma.nome}
+            </Text>
+
+            <View style={styles.botoes}>
+              <TouchableOpacity
+                style={[styles.botao, { backgroundColor: '#2196F3' }]}
+                onPress={() => navigation.navigate('ClassActivities', { turmaId: turma.id })}
+              >
+                <Text style={styles.textoBotao}>VISUALIZAR</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.botao, { backgroundColor: 'red' }]}
+                onPress={() => excluirTurma(turma.id)}
+              >
+                <Text style={styles.textoBotao}>EXCLUIR</Text>
+              </TouchableOpacity>
             </View>
-            <Button
-              title="Visualizar"
-              onPress={() => navigation.navigate('ClassActivities', { classId: item.id, className: item.name })}
-            />
-            <View style={{ width: 8 }} />
-            <Button
-              title="Excluir"
-              color="#cc0000"
-              onPress={() => handleDelete(item.id)}
-            />
           </View>
-        )}
-      />
-    </View>
+        ))
+      )}
+    </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  header: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
-  section: { fontSize: 18, marginTop: 20, marginBottom: 10 },
-  classRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: {
+    padding: 16,
+  },
+  botao: {
+    backgroundColor: '#2196F3',
+    padding: 10,
+    borderRadius: 5,
+    marginVertical: 5,
+  },
+  textoBotao: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  titulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 15,
     marginBottom: 10,
+  },
+  item: {
     backgroundColor: '#f9f9f9',
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  textoTurma: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  botoes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
   },
 });
