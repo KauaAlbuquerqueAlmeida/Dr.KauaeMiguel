@@ -7,6 +7,16 @@ import CreateClass from './src/screens/CreateClass';
 import ClassActivities from './src/screens/ClassActivities';
 import CreateActivity from './src/screens/CreateActivity';
 import { ensureInitialData } from './src/storage';
+import { supabase } from './src/supabase';
+
+supabase
+  .from('turmas')
+  .select('*')
+  .limit(1)
+  .then(({ data, error }) => {
+    if (error) console.log('❌ Erro Supabase:', error.message);
+    else console.log('✅ Conexão Supabase:', data);
+  });
 
 const Stack = createNativeStackNavigator();
 

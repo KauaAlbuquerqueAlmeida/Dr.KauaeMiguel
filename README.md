@@ -8,3 +8,8 @@ depois instele:
 
 npx expo install react-native-web@~0.18.10 react-dom@18.2.0
 npx expo install @expo/webpack-config@^18.0.1
+
+
+
+login para entrar é:professor@escola.com
+senha: 123456
