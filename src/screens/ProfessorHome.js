@@ -29,10 +29,10 @@ export default function ProfessorHome({ navigation }) {
 
   // 🔹 Busca turmas do professor logado
   const buscarTurmas = async (professorId) => {
-   const { data, error } = await supabase
-  .from('turmas')
-  .select('id, nome, numero')
-  .eq('professor_id', user.id);
+    const { data, error } = await supabase
+      .from('turmas')
+      .select('id, nome, numero')
+      .eq('professor_id', professorId);
 
     if (error) {
       console.log('❌ Erro ao buscar turmas:', error.message);
@@ -42,34 +42,29 @@ export default function ProfessorHome({ navigation }) {
     }
   };
 
-  // 🔹 Excluir turma
   const excluirTurma = async (id) => {
-    Alert.alert(
-      'Confirmar exclusão',
-      'Deseja realmente excluir esta turma?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            const { error } = await supabase.from('turmas').delete().eq('id', id);
-            if (error) {
-              console.log('Erro ao excluir turma:', error.message);
-            } else {
-              buscarTurmas(professor.id);
-            }
-          },
-        },
-      ]
-    );
-  };
+    const confirmar = window.confirm("Tem certeza que deseja excluir esta turma?");
 
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from("turmas")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert("Erro ao excluir: " + error.message);
+    } else {
+      alert("Turma excluída com sucesso!");
+      buscarTurmas(professor.id);
+    }
+  };
   // 🔹 Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigation.replace('Login');
   };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -97,9 +92,16 @@ export default function ProfessorHome({ navigation }) {
             <View style={styles.botoes}>
               <TouchableOpacity
                 style={[styles.botao, { backgroundColor: '#2196F3' }]}
-                onPress={() => navigation.navigate('ClassActivities', { turmaId: turma.id })}
+                onPress={() => navigation.navigate('ClassActivities', { classId: turma.id, className: turma.nome })}
               >
                 <Text style={styles.textoBotao}>VISUALIZAR</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.botao, { backgroundColor: '#1ecd3eff' }]}
+                onPress={() => navigation.navigate('EditClass', { turma })}
+              >
+                <Text style={styles.textoBotao}>EDITAR</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

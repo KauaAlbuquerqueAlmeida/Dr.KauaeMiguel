@@ -1,60 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  Keyboard
+} from 'react-native';
+import { supabase } from '../supabase';
 
 export default function CreateActivity({ route, navigation }) {
   const { classId } = route.params;
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
 
   const handleSaveActivity = async () => {
     if (!title.trim()) {
-      Alert.alert('Erro', 'O título da atividade é obrigatório.');
+      alert('O título é obrigatório.');
       return;
     }
 
     try {
-      const newActivity = {
-        id: Date.now().toString(),
-        title: title.trim(),
-        description: description.trim(),
-        dueDate: dueDate.trim(),
-        createdAt: new Date().toISOString(),
-        classId,
-      };
+      const { error } = await supabase
+        .from('atividades')
+        .insert([
+          {
+            titulo: title.trim(),
+            descricao: description.trim(),
+            data_entrega: dueDate.trim(),
+            turma_id: classId,     // ✅ liga atividade à turma correta
+          }
+        ]);
 
-      // Buscar atividades salvas
-      const existingActivities = await AsyncStorage.getItem('activities');
-      const activities = existingActivities ? JSON.parse(existingActivities) : [];
+      if (error) {
+        console.log('Erro ao salvar:', error);
+        alert('Erro ao salvar atividade.');
+        return;
+      }
 
-      // Adicionar nova atividade
-      activities.push(newActivity);
-      await AsyncStorage.setItem('activities', JSON.stringify(activities));
-
-      Alert.alert('Sucesso', 'Atividade criada com sucesso!');
+      alert('Atividade criada com sucesso!');
       navigation.goBack();
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível salvar a atividade.');
+
+    } catch (err) {
+      console.log(err);
+      alert('Erro inesperado ao salvar.');
     }
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
+
         <Text style={styles.title}>Nova Atividade</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Título da atividade"
+          placeholder="Título"
           value={title}
           onChangeText={setTitle}
         />
 
         <TextInput
           style={[styles.input, styles.textArea]}
-          placeholder="Descrição (opcional)"
+          placeholder="Descrição"
           value={description}
           onChangeText={setDescription}
           multiline
@@ -62,7 +73,7 @@ export default function CreateActivity({ route, navigation }) {
 
         <TextInput
           style={styles.input}
-          placeholder="Data de entrega (ex: 10/11/2025)"
+          placeholder="Data de entrega (opcional)"
           value={dueDate}
           onChangeText={setDueDate}
         />
@@ -74,28 +85,13 @@ export default function CreateActivity({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f2f2',
-    padding: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#FFF' },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
   input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
+    borderWidth: 1, borderColor: '#aaa',
+    borderRadius: 8, padding: 12, marginBottom: 14
   },
   textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
+    height: 100, textAlignVertical: 'top'
+  }
 });

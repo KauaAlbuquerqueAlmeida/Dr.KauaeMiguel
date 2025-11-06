@@ -34,7 +34,7 @@ export default function CreateClass({ navigation }) {
       {
         nome,
         numero: parseInt(numero),
-        id_professor: id_professor, // 🔹 RELAÇÃO COM O PROFESSOR LOGADO
+        professor_id: professor.id,
       },
     ]);
 
@@ -72,12 +72,12 @@ export default function CreateClass({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 10,
+    marginBottom: 15,
     borderRadius: 5,
-    marginBottom: 10,
   },
 });

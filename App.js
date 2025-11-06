@@ -8,6 +8,7 @@ import ClassActivities from './src/screens/ClassActivities';
 import CreateActivity from './src/screens/CreateActivity';
 import { ensureInitialData } from './src/storage';
 import { supabase } from './src/supabase';
+import EditClass from './src/screens/EditClass';
 
 supabase
   .from('turmas')
@@ -57,6 +58,11 @@ export default function App() {
           name="CreateActivity"
           component={CreateActivity}
           options={{ title: 'Cadastrar Atividade' }}
+        />
+        <Stack.Screen
+          name="EditClass"
+          component={EditClass}
+          options={{ title: 'Editar Turma' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

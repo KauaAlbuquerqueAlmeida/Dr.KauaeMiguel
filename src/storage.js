@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 🔹 Retorna o usuário atualmente logado
 export async function getCurrentUser() {

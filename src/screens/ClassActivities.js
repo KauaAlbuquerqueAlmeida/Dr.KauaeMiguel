@@ -1,36 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { supabase } from '../supabase'; // ✅ Import necessário!
 
 export default function ClassActivities({ route, navigation }) {
   const { classId, className } = route.params;
   const [activities, setActivities] = useState([]);
 
-  useEffect(() => {
-    const loadActivities = async () => {
-      try {
-        const savedActivities = await AsyncStorage.getItem('activities');
-        const parsed = savedActivities ? JSON.parse(savedActivities) : [];
-        const classActivities = parsed.filter(a => a.classId === classId);
-        setActivities(classActivities);
-      } catch (error) {
-        console.error(error);
-        Alert.alert('Erro', 'Não foi possível carregar as atividades.');
-      }
-    };
+  // ✅ Carrega atividades do Supabase
+  const loadActivities = async () => {
+    const { data, error } = await supabase
+      .from('atividades')
+      .select('*')
+      .eq('turma_id', classId)   // ✅ pega só da turma certa
+      .order('created_at', { ascending: false });
 
+    if (error) {
+      console.log('Erro ao carregar atividades:', error);
+      alert('Não foi possível carregar atividades.');
+      return;
+    }
+
+    setActivities(data);
+  };
+
+  // ✅ Recarrega ao entrar na tela
+  useEffect(() => {
     const unsubscribe = navigation.addListener('focus', loadActivities);
     return unsubscribe;
   }, [navigation, classId]);
 
+  // ✅ Renderização de cada atividade
   const renderItem = ({ item }) => (
     <View style={styles.activityCard}>
-      <Text style={styles.activityTitle}>{item.title}</Text>
-      {item.description ? (
-        <Text style={styles.activityDesc}>{item.description}</Text>
+      <Text style={styles.activityTitle}>{item.titulo}</Text>
+
+      {item.descricao ? (
+        <Text style={styles.activityDesc}>{item.descricao}</Text>
       ) : null}
-      {item.dueDate ? (
-        <Text style={styles.dueDate}>Entrega: {item.dueDate}</Text>
+
+      {item.data_entrega ? (
+        <Text style={styles.dueDate}>Entrega: {item.data_entrega}</Text>
       ) : null}
     </View>
   );
@@ -44,7 +53,7 @@ export default function ClassActivities({ route, navigation }) {
       ) : (
         <FlatList
           data={activities}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => String(item.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
         />
@@ -59,6 +68,7 @@ export default function ClassActivities({ route, navigation }) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
